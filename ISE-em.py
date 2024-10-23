@@ -2,9 +2,9 @@
 import requests
 import xml.etree.ElementTree as ET
 
-### Define ISE-IP
-ISE_Server= "X.X.X.X"   #### make sure you edit this
-
+### Define ISE-IP and WLC IP
+ISE_Server = "X.X.X.X"   ### make sure you edit this
+WLC_IP = "X.X.X.X"   #### make sure you edit this
 ### Get URL of profile-id for airtames
 url = f"https://{ISE_Server}:443/ers/config/profilerprofile/?filter=name.eq.AIRTAME-Device"
 ### set up payload and headers to get authorized
@@ -42,18 +42,19 @@ while pagnationOngoing:
 for item in listofmacs:
   url = f"https://{ISE_Server}/admin/API/mnt/Session/MACAddress/"+item
   response = requests.request("GET", url, headers=headers, data=payload, verify=False)
-### if the response is an ok, parse through that data to get everythign you need for a coa port bounce api call
+### if the response is an ok, parse through that data to get everythign you need for a coa port bounce api call. DO NOT include any with the network device as our WLC IP, bcause we're only looking to do the ones wired in
   if response.status_code == 200:
     searchableString=str(response.content)
-    MAC=item
-    Switch=(searchableString[searchableString.find("<device_ip_address>"):searchableString.find("</device_ip_address>")])
-    Switch=Switch[Switch.find(">")+1:]
-    PSN=(searchableString[searchableString.find("<destination_ip_address>"):searchableString.find("</destination_ip_address>")])
-    PSN=PSN[PSN.find(">")+1:]
-    MntNode=(searchableString[searchableString.find("<acs_server>"):searchableString.find("</acs_server>")])
-    MntNode=MntNode[MntNode.find(">")+1:]
+    NetworkDevice=(searchableString[searchableString.find("<device_ip_address>"):searchableString.find("</device_ip_address>")])
+    NetworkDevice=NetworkDevice[NetworkDevice.find(">")+1:]
+    if WLC_IP not in NetworkDevice:
+      MAC=item
+      PSN=(searchableString[searchableString.find("<destination_ip_address>"):searchableString.find("</destination_ip_address>")])
+      PSN=PSN[PSN.find(">")+1:]
+      MntNode=(searchableString[searchableString.find("<acs_server>"):searchableString.find("</acs_server>")])
+      MntNode=MntNode[MntNode.find(">")+1:]
 ### build you url for the call
-    url = f"https://{ISE_Server}:443/admin/API/mnt/CoA/Disconnect/{MntNode}/{MAC}/1/{Switch}/{PSN}"
+      url = f"https://{ISE_Server}:443/admin/API/mnt/CoA/Disconnect/{MntNode}/{MAC}/1/{NetworkDevice}/{PSN}"
 ### make the call
-    response = requests.request("GET", url, headers=headers, data=payload, verify=False)
+      response = requests.request("GET", url, headers=headers, data=payload, verify=False)
   
