@@ -75,6 +75,5 @@ for item in listofmacs:
 
 #make the calls
 for bounceurl in bounceList:
-  print(bounceurl)
-  #requests.request("GET", bounceurl, headers = getHeaders(""),  verify=False)
+  requests.request("GET", bounceurl, headers = getHeaders(""),  verify=False)
 
